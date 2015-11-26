@@ -74,10 +74,18 @@ public class DynamicProperties {
 		return (String) configuration.getProperty(key);
 	}
 
+	/** Set property without saving to disk */
 	public void setProperty(String key, Object value) {
 		configuration.setProperty(key, value);
 	}
 
+	/** Set property and save to disk */
+	public void setAndSave(String key, Object value) {
+		setProperty(key, value);
+		save();
+	}
+
+	/** Save properties file */
 	public void save() {
 		try {
 			configuration.save();
