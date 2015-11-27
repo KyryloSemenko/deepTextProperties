@@ -16,12 +16,19 @@ public class TokenizerServiceTest {
 	
 	/** Test for {@link TokenizerService#tuples(String, Short)} */
 	@Test
-	public void test() {
+	public void tuplesTest() {
 		TokenizerService tokenizerService = new TokenizerService();
 		String text = "abcd";
-		Short maxTokenLength = 2;
-		List<Tuple> result = tokenizerService.tuples(text, maxTokenLength);
+		
+		List<Tuple> result = tokenizerService.tuples(text, null);
 		assertEquals("Number of tuples", 10, result.size());
+		
+		result = tokenizerService.tuples(text, (short) 2);
+		assertEquals("Number of tuples", 3, result.size());
+		
+		result = tokenizerService.tuples(text, (short) 3);
+		assertEquals("Number of tuples", 7, result.size());
+		
 	}
 
 }
