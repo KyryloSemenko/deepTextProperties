@@ -20,15 +20,13 @@ public class TokenizerServiceTest {
 		TokenizerService tokenizerService = new TokenizerService();
 		String text = "abcd";
 		
-		List<Tuple> result = tokenizerService.tuples(text, null);
-		assertEquals("Number of tuples", 10, result.size());
-		
-		result = tokenizerService.tuples(text, (short) 2);
+		List<Tuple> result = tokenizerService.tuples(text, (short) 2);
 		assertEquals("Number of tuples", 3, result.size());
 		
 		result = tokenizerService.tuples(text, (short) 3);
 		assertEquals("Number of tuples", 7, result.size());
 		
+		result = tokenizerService.tuples(text, null);
+		assertEquals("Number of tuples", 10, result.size());
 	}
-
 }

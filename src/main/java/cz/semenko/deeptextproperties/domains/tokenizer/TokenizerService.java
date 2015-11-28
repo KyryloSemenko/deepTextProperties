@@ -8,18 +8,19 @@ import org.springframework.stereotype.Service;
 import cz.semenko.deeptextproperties.domains.tokenizer.dto.Tuple;
 
 /**
- * {@link Service} that helps to break input text to parts
+ * {@link Service} that helps to find out {@link Tuple}s in text
  * @author Kyrylo Semenko
- *
  */
 @Service
 public class TokenizerService {
 	/**
-	 * Find out {@link Tuple}s.<br>
-	 * For example word <i>one</i> will be break to next tuples: [n:e, o:n, o:ne, on:e]<br>
-	 * And word <i>abcde</i> will be break to next tuples: [d:e, c:d, c:de, cd:e, b:c, b:cd, b:cde, bc:d, bc:de, bcd:e, a:b, a:bc, a:bcd, a:bcde, ab:c, ab:cd, ab:cde, abc:d, abc:de, abcd:e]
+	 * Finds out {@link Tuple}s in text.<br>
+	 * For example from word <i>one</i> the method extracted next tuples: [n:e, o:n, o:ne, on:e].<br>
+	 * And word <i>abcde</i> will be break into next tuples: [d:e, c:d, c:de, cd:e, b:c, b:cd, b:cde, bc:d, bc:de, bcd:e, a:b, a:bc, a:bcd, a:bcde, ab:c, ab:cd, ab:cde, abc:d, abc:de, abcd:e]
 	 * @param text to be tokenized
-	 * @param maxTupleLength max number of characters in result {@link Tuple#left} plus {@link Tuple#right}. If null - without constraint.
+	 * @param maxTupleLength max number of characters in result {@link Tuple#left} plus {@link Tuple#right}.<br>
+	 * If null - method return all possible tuples without constraint.<br>
+	 * If not null, for example 2 and text is <i>abcd</i>, result is ['d:e', 'c:d', 'b:c', 'a:b'].
 	 */
 	public List<Tuple> tuples(String text, Short maxTupleLength) {
 		

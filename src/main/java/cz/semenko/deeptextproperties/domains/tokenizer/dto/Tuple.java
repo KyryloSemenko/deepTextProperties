@@ -22,13 +22,13 @@ public class Tuple implements Comparable<Tuple> {
 	
 	/** Constructor */
 	public Tuple(String src, String tgt) {
-		setSrc(src);
+		setLeft(src);
 		setRight(tgt);
 	}
 	
 	/** Constructor */
 	public Tuple(String src, String tgt, Integer occurrences) {
-		setSrc(src);
+		setLeft(src);
 		setRight(tgt);
 		setOccurrences(occurrences);
 	}
@@ -44,7 +44,7 @@ public class Tuple implements Comparable<Tuple> {
 			return 1;
 		}
 		return new CompareToBuilder()
-			.append(this.getSrc(), o.getSrc())
+			.append(this.getLeft(), o.getLeft())
 			.append(this.getRight(), o.getRight())
 			.toComparison();
 	}
@@ -54,15 +54,15 @@ public class Tuple implements Comparable<Tuple> {
 	/**
 	 * See {@link Tuple#left}
 	 */
-	public String getSrc() {
+	public String getLeft() {
 		return left;
 	}
 
 	/**
 	 * See {@link Tuple#left}
 	 */
-	public void setSrc(String src) {
-		this.left = src;
+	public void setLeft(String value) {
+		this.left = value;
 	}
 
 	/**
@@ -75,8 +75,8 @@ public class Tuple implements Comparable<Tuple> {
 	/**
 	 * See {@link Tuple#right}
 	 */
-	public void setRight(String right) {
-		this.right = right;
+	public void setRight(String value) {
+		this.right = value;
 	}
 
 	/**
