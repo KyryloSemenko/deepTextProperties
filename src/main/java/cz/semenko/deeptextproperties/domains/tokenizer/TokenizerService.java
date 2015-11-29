@@ -22,7 +22,7 @@ public class TokenizerService {
 	 * If null - method return all possible tuples without constraint.<br>
 	 * If not null, for example 2 and text is <i>abcd</i>, result is ['d:e', 'c:d', 'b:c', 'a:b'].
 	 */
-	public List<Tuple> tuples(String text, Short maxTupleLength) {
+	public List<Tuple> tuples(String text, Integer maxTupleLength) {
 		
 		List<Tuple>tuples = new ArrayList<Tuple>();
 		

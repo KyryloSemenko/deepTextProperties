@@ -32,7 +32,7 @@ public class IndexServiceTests {
 			IndexService indexService = initIndexService();
 			TokenizerService tokenizerService = new TokenizerService();
 			String text = "one";
-			List<Tuple> tuples = tokenizerService.tuples(text, (short) 30);
+			List<Tuple> tuples = tokenizerService.tuples(text, 30);
 			indexService.append(tuples);
 			int size = indexService.indexSize();
 			assertEquals("Number of documents", 4, size);
@@ -79,16 +79,17 @@ public class IndexServiceTests {
 	
 	/** Calculates speed of {@link IndexService#append(List)} method */
 	@Test
-	@Ignore
+//	@Ignore
 	public void appendSpeedTest() {
 		try {
 			IndexService indexService = initIndexService();
 			TokenizerService tokenizerService = new TokenizerService();
 			// length = 271
 			String text = "The TemporaryFolder Rule allows creation of files and folders that should be deleted when the test method finishes (whether it passes or fails). Whether the deletion is successful or not is not checked by this rule. No exception will be thrown in case the deletion fails.";
+			List<Tuple> tuples = tokenizerService.tuples(text, 20);
 			Date appendStartDate = new Date();
 			for (int i = 0; i < 10000; i++) {
-				indexService.append(tokenizerService.tuples(text, (short) 20));
+				indexService.append(tuples);
 				System.out.println("i: " + i + " " + new Date());
 			}
 			Date appendStopDate = new Date();
@@ -111,7 +112,7 @@ public class IndexServiceTests {
 			TokenizerService tokenizerService = new TokenizerService();
 			String text = "The TemporaryFolder";
 			Date increaseStartDate = new Date();
-			indexService.appendOrIncrease(tokenizerService.tuples(text, (short) 20));
+			indexService.appendOrIncrease(tokenizerService.tuples(text, 20));
 			Date increaseStopDate = new Date();
 			System.out.println("Increase: " + (increaseStopDate.getTime() - increaseStartDate.getTime()));
 			System.out.println(indexService.indexSize());

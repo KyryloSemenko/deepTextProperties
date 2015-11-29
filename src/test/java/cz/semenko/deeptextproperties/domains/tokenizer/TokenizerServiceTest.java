@@ -14,16 +14,16 @@ import cz.semenko.deeptextproperties.domains.tokenizer.dto.Tuple;
  */
 public class TokenizerServiceTest {
 	
-	/** Test for {@link TokenizerService#tuples(String, Short)} */
+	/** Test for {@link TokenizerService#tuples(String, Integer)} */
 	@Test
 	public void tuplesTest() {
 		TokenizerService tokenizerService = new TokenizerService();
 		String text = "abcd";
 		
-		List<Tuple> result = tokenizerService.tuples(text, (short) 2);
+		List<Tuple> result = tokenizerService.tuples(text, 2);
 		assertEquals("Number of tuples", 3, result.size());
 		
-		result = tokenizerService.tuples(text, (short) 3);
+		result = tokenizerService.tuples(text, 3);
 		assertEquals("Number of tuples", 7, result.size());
 		
 		result = tokenizerService.tuples(text, null);
