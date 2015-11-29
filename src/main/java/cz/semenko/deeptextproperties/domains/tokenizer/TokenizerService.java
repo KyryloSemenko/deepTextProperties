@@ -41,7 +41,7 @@ public class TokenizerService {
 							continue;
 						}
 					}
-					Tuple tuple = new Tuple(src, tgt, 0);
+					Tuple tuple = new Tuple(src, tgt, 1);
 					tuples.add(tuple);
 				}
 			}

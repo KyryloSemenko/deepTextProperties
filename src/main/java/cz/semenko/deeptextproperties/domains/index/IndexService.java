@@ -1,8 +1,10 @@
 package cz.semenko.deeptextproperties.domains.index;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
@@ -10,10 +12,22 @@ import javax.annotation.PostConstruct;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.IntField;
-import org.apache.lucene.document.TextField;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.IndexWriterConfig.OpenMode;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanClause.Occur;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.PhraseQuery;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.store.FSDirectory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,20 +61,23 @@ public class IndexService {
 	/** Just "" */
 	private static final String EMPTY_STRING = "";
 
-	/** Just 0 */
-	private static final int ZERO = 0;
+	/** Just 1 as a number of occurrences */
+	private static final int ONE = 1;
 
 	@Autowired
 	private Environment environment;
 	
 	/** See {@link IndexWriter} */
-	private IndexWriter writer;
+	private IndexWriter indexWriter;
 
 	/** See {@link StandardAnalyzer} */
-	private StandardAnalyzer analyzer;
+	private StandardAnalyzer standardAnalyzer;
 	
 	/** Path to index directory */
 	private String indexDirectoryPath;
+	
+	/** See {@link FSDirectory} */
+	private FSDirectory fsDirectory;
 	
 	/**
 	 * Initialisation of Lucene index
@@ -82,11 +99,13 @@ public class IndexService {
 				}
 				logger.info("Indexer directory created: " + dir.getCanonicalPath());
 			}
-			FSDirectory fsDirectory = FSDirectory.open(indexPath);
-			analyzer = new StandardAnalyzer();
-			IndexWriterConfig config = new IndexWriterConfig(analyzer);
+			fsDirectory = FSDirectory.open(indexPath);
+			standardAnalyzer = new StandardAnalyzer();
+			IndexWriterConfig config = new IndexWriterConfig(standardAnalyzer);
+			config.setOpenMode(OpenMode.CREATE_OR_APPEND);
 			
-			writer = new IndexWriter(fsDirectory, config);
+			indexWriter = new IndexWriter(fsDirectory, config);
+			
 			logger.info("Apache Lucene indexer configured. Index directory: " + dir.getCanonicalPath());
 		} catch (Exception e) {
 			throw new RuntimeException("Indexer initialization failed. Message: " + e.getMessage(), e);
@@ -106,11 +125,11 @@ public class IndexService {
 	public void append(List<Tuple> tuples) {
 		try {
 			Document document = new Document();
-			Field leftFiled = new Field(FIELD_LEFT, EMPTY_STRING, TextField.TYPE_STORED);
+			Field leftFiled = new StringField(FIELD_LEFT, EMPTY_STRING, Store.YES);
 			document.add(leftFiled);
-			Field rightField = new Field(FIELD_RIGHT, EMPTY_STRING, TextField.TYPE_STORED);
+			Field rightField = new StringField(FIELD_RIGHT, EMPTY_STRING, Store.YES);
 			document.add(rightField);
-			Field occurrencesField = new IntField(FIELD_OCCURRENCES, ZERO, Field.Store.NO);
+			Field occurrencesField = new IntField(FIELD_OCCURRENCES, ONE, Field.Store.YES);
 			document.add(occurrencesField);
 			
 			for (Tuple tuple : tuples) {
@@ -118,15 +137,148 @@ public class IndexService {
 				rightField.setStringValue(tuple.getRight());
 				occurrencesField.setIntValue(tuple.getOccurrences());
 				try {
-					writer.addDocument(document);
+					indexWriter.addDocument(document);
 				} catch (Exception e) {
 					logger.error("Document addition failed. Tuple: " + tuple);
 					throw new RuntimeException(e);
 				}
 			}
 			
-			writer.commit();
+			indexWriter.commit();
 		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
+	 * In case when exists tuple with same {@link Tuple#left} and {@link Tuple#right} in index,
+	 * increase it {@link Tuple#occurrences} in index. Else create new {@link Document} with {@link Tuple} and add it to index with {@link Tuple#occurrences} 1.<br>
+	 */
+	public void appendOrIncrease(List<Tuple> tuples) {
+		try {
+			if (!indexWriter.isOpen()) {
+				IndexWriterConfig config = new IndexWriterConfig(standardAnalyzer);
+				config.setOpenMode(OpenMode.CREATE_OR_APPEND);
+				indexWriter = new IndexWriter(fsDirectory, config);
+			}
+			Document document = new Document();
+			Field leftFiled = new StringField(FIELD_LEFT, EMPTY_STRING, Store.YES);
+			document.add(leftFiled);
+			Field rightField = new StringField(FIELD_RIGHT, EMPTY_STRING, Store.YES);
+			document.add(rightField);
+			Field occurrencesField = new IntField(FIELD_OCCURRENCES, ONE, Field.Store.YES);
+			document.add(occurrencesField);
+			
+			for (Tuple tuple : tuples) {
+				if (isEmpty(fsDirectory)) {
+					leftFiled.setStringValue(tuple.getLeft());
+					rightField.setStringValue(tuple.getRight());
+					occurrencesField.setIntValue(tuple.getOccurrences());
+					indexWriter.addDocument(document);
+					indexWriter.commit();
+					continue;
+				}
+				DirectoryReader directoryReader = DirectoryReader.open(fsDirectory);
+			    IndexSearcher indexSearcher = new IndexSearcher(directoryReader);
+			    BooleanQuery booleanQuery = createQuery(tuple);
+			    ScoreDoc[] hits = indexSearcher.search(booleanQuery, 1).scoreDocs;
+			    if (hits.length == 1) {
+			    	Document hitDoc = indexSearcher.doc(hits[0].doc);
+			    	int current = hitDoc.getField(FIELD_OCCURRENCES).numericValue().intValue();
+			    	// replace
+			    	indexWriter.deleteDocuments(booleanQuery);
+			    	leftFiled.setStringValue(tuple.getLeft());
+					rightField.setStringValue(tuple.getRight());
+					occurrencesField.setIntValue(++current);
+					indexWriter.addDocument(document);
+			    } else {
+			    	leftFiled.setStringValue(tuple.getLeft());
+					rightField.setStringValue(tuple.getRight());
+					occurrencesField.setIntValue(tuple.getOccurrences());
+					indexWriter.addDocument(document);
+			    }
+			    directoryReader.close();
+			    indexWriter.commit();
+			}
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * @param fsDirectory 
+	 * @return true if directory contains less then two files
+	 * @throws IOException 
+	 */
+	private boolean isEmpty(FSDirectory fsDirectory) throws IOException {
+		Path path = fsDirectory.getDirectory();
+		File dir = path.toFile();
+		return new File(dir.getCanonicalPath()).list().length < 2;
+	}
+
+	/**
+	 * Creates query like <i>+left:a +right:b</i>to Lucene
+	 */
+	private BooleanQuery createQuery(Tuple tuple) {
+		Term termLeft = new Term(FIELD_LEFT, escape(tuple.getLeft()));
+		PhraseQuery queryLeft = new PhraseQuery.Builder().add(termLeft).build();
+		Term termRight = new Term(FIELD_RIGHT, escape(tuple.getRight()));
+		PhraseQuery queryRight = new PhraseQuery.Builder().add(termRight).build();
+		
+		return new BooleanQuery.Builder()
+			.setDisableCoord(true)
+			.add(queryLeft, Occur.MUST)
+			.add(queryRight, Occur.MUST)
+			.build();
+	}
+
+	/**
+	 * Calls the {@link QueryParser#escape(String)} method.
+	 * Escapes Lucene special characters <i>+ - && || ! ( ) { } [ ] ^ " ~ * ? : \ /</i>
+	 */
+	private String escape(String string) {
+		return QueryParser.escape(string);
+	}
+	
+	private Query allDocuments() {
+		return new MatchAllDocsQuery();
+	}
+
+	/**
+	 * Returns all tuples from index. For tests purpose.
+	 */
+	public List<Tuple> findAllTuples() {
+		try {
+			List<Tuple> result = new ArrayList<>();
+			if (isEmpty(fsDirectory)) {
+				return result;
+			}
+			DirectoryReader ireader = DirectoryReader.open(fsDirectory);
+			IndexSearcher isearcher = new IndexSearcher(ireader);
+			ScoreDoc[] hits = isearcher.search(allDocuments(), Integer.MAX_VALUE).scoreDocs;
+			for (int i = 0; i < hits.length; i++) {
+				Document doc = isearcher.doc(hits[i].doc);
+				result.add(new Tuple(doc.get(FIELD_LEFT), doc.get(FIELD_RIGHT), Integer.valueOf(doc.get(FIELD_OCCURRENCES))));
+			}
+			ireader.close();
+			return result;
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Returns number of documents in index
+	 */
+	public int indexSize() {
+		try {
+			if (isEmpty(fsDirectory)) {
+				return 0;
+			}
+			DirectoryReader ireader;
+			ireader = DirectoryReader.open(fsDirectory);
+			return ireader.maxDoc();
+		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
