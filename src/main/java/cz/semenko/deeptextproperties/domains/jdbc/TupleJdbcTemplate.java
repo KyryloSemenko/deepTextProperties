@@ -7,7 +7,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Repository;
 
 import cz.semenko.deeptextproperties.domains.tokenizer.dto.Tuple;
 
@@ -15,7 +15,7 @@ import cz.semenko.deeptextproperties.domains.tokenizer.dto.Tuple;
  * {@link JdbcTemplate} for access to table TUPLE_ROW
  * @author Kyrylo Semenko kyrylo.semenko@gmail.com
  */
-@Service
+@Repository
 public class TupleJdbcTemplate {
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
