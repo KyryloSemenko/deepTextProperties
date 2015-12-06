@@ -47,13 +47,13 @@ public class IndexService {
 	private static final Logger logger = LoggerFactory.getLogger(IndexService.class);
 
 	/** Name of the document field */
-	private static final String FIELD_OCCURRENCES = "occurrences";
+	private static final String FIELD_NUM = "num";
 
 	/** Name of the document field */
-	private static final String FIELD_RIGHT = "right";
+	private static final String FIELD_FOL = "fol";
 
 	/** Name of the document field */
-	private static final String FIELD_LEFT = "left";
+	private static final String FIELD_PREV = "prev";
 	
 	/** Key in properties file. Value is Lucene index directory path in file system */
 	private static final String INDEX_DIRECTORY_KEY = "INDEX_DIRECTORY_KEY";
@@ -125,17 +125,17 @@ public class IndexService {
 	public void append(List<Tuple> tuples) {
 		try {
 			Document document = new Document();
-			Field leftFiled = new StringField(FIELD_LEFT, EMPTY_STRING, Store.YES);
-			document.add(leftFiled);
-			Field rightField = new StringField(FIELD_RIGHT, EMPTY_STRING, Store.YES);
-			document.add(rightField);
-			Field occurrencesField = new IntField(FIELD_OCCURRENCES, ONE, Field.Store.YES);
-			document.add(occurrencesField);
+			Field previouseFiled = new StringField(FIELD_PREV, EMPTY_STRING, Store.YES);
+			document.add(previouseFiled);
+			Field followingField = new StringField(FIELD_FOL, EMPTY_STRING, Store.YES);
+			document.add(followingField);
+			Field numField = new IntField(FIELD_NUM, ONE, Field.Store.YES);
+			document.add(numField);
 			
 			for (Tuple tuple : tuples) {
-				leftFiled.setStringValue(tuple.getLeft());
-				rightField.setStringValue(tuple.getRight());
-				occurrencesField.setIntValue(tuple.getOccurrences());
+				previouseFiled.setStringValue(tuple.getPrev());
+				followingField.setStringValue(tuple.getFol());
+				numField.setIntValue(tuple.getNum());
 				try {
 					indexWriter.addDocument(document);
 				} catch (Exception e) {
@@ -151,8 +151,8 @@ public class IndexService {
 	}
 	
 	/**
-	 * In case when exists tuple with same {@link Tuple#left} and {@link Tuple#right} in index,
-	 * increase it {@link Tuple#occurrences} in index. Else create new {@link Document} with {@link Tuple} and add it to index with {@link Tuple#occurrences} 1.<br>
+	 * In case when exists tuple with same {@link Tuple#prev} and {@link Tuple#fol} in index,
+	 * increase it {@link Tuple#num} in index. Else create new {@link Document} with {@link Tuple} and add it to index with {@link Tuple#num} 1.<br>
 	 */
 	public void appendOrIncrease(List<Tuple> tuples) {
 		try {
@@ -162,18 +162,18 @@ public class IndexService {
 				indexWriter = new IndexWriter(fsDirectory, config);
 			}
 			Document document = new Document();
-			Field leftFiled = new StringField(FIELD_LEFT, EMPTY_STRING, Store.YES);
-			document.add(leftFiled);
-			Field rightField = new StringField(FIELD_RIGHT, EMPTY_STRING, Store.YES);
-			document.add(rightField);
-			Field occurrencesField = new IntField(FIELD_OCCURRENCES, ONE, Field.Store.YES);
-			document.add(occurrencesField);
+			Field previouseFiled = new StringField(FIELD_PREV, EMPTY_STRING, Store.YES);
+			document.add(previouseFiled);
+			Field followingField = new StringField(FIELD_FOL, EMPTY_STRING, Store.YES);
+			document.add(followingField);
+			Field numberField = new IntField(FIELD_NUM, ONE, Field.Store.YES);
+			document.add(numberField);
 			
 			for (Tuple tuple : tuples) {
 				if (isEmpty(fsDirectory)) {
-					leftFiled.setStringValue(tuple.getLeft());
-					rightField.setStringValue(tuple.getRight());
-					occurrencesField.setIntValue(tuple.getOccurrences());
+					previouseFiled.setStringValue(tuple.getPrev());
+					followingField.setStringValue(tuple.getFol());
+					numberField.setIntValue(tuple.getNum());
 					indexWriter.addDocument(document);
 					indexWriter.commit();
 					continue;
@@ -184,17 +184,17 @@ public class IndexService {
 			    ScoreDoc[] hits = indexSearcher.search(booleanQuery, 1).scoreDocs;
 			    if (hits.length == 1) {
 			    	Document hitDoc = indexSearcher.doc(hits[0].doc);
-			    	int current = hitDoc.getField(FIELD_OCCURRENCES).numericValue().intValue();
+			    	int current = hitDoc.getField(FIELD_NUM).numericValue().intValue();
 			    	// replace
 			    	indexWriter.deleteDocuments(booleanQuery);
-			    	leftFiled.setStringValue(tuple.getLeft());
-					rightField.setStringValue(tuple.getRight());
-					occurrencesField.setIntValue(++current);
+			    	previouseFiled.setStringValue(tuple.getPrev());
+					followingField.setStringValue(tuple.getFol());
+					numberField.setIntValue(++current);
 					indexWriter.addDocument(document);
 			    } else {
-			    	leftFiled.setStringValue(tuple.getLeft());
-					rightField.setStringValue(tuple.getRight());
-					occurrencesField.setIntValue(tuple.getOccurrences());
+			    	previouseFiled.setStringValue(tuple.getPrev());
+					followingField.setStringValue(tuple.getFol());
+					numberField.setIntValue(tuple.getNum());
 					indexWriter.addDocument(document);
 			    }
 			    directoryReader.close();
@@ -217,12 +217,12 @@ public class IndexService {
 	}
 
 	/**
-	 * Creates query like <i>+left:a +right:b</i>to Lucene
+	 * Creates query like <i>+prev:a +fol:b</i>to Lucene
 	 */
 	private BooleanQuery createQuery(Tuple tuple) {
-		Term termLeft = new Term(FIELD_LEFT, escape(tuple.getLeft()));
+		Term termLeft = new Term(FIELD_PREV, escape(tuple.getPrev()));
 		PhraseQuery queryLeft = new PhraseQuery.Builder().add(termLeft).build();
-		Term termRight = new Term(FIELD_RIGHT, escape(tuple.getRight()));
+		Term termRight = new Term(FIELD_FOL, escape(tuple.getFol()));
 		PhraseQuery queryRight = new PhraseQuery.Builder().add(termRight).build();
 		
 		return new BooleanQuery.Builder()
@@ -258,7 +258,7 @@ public class IndexService {
 			ScoreDoc[] hits = isearcher.search(allDocuments(), Integer.MAX_VALUE).scoreDocs;
 			for (int i = 0; i < hits.length; i++) {
 				Document doc = isearcher.doc(hits[i].doc);
-				result.add(new Tuple(doc.get(FIELD_LEFT), doc.get(FIELD_RIGHT), Integer.valueOf(doc.get(FIELD_OCCURRENCES))));
+				result.add(new Tuple(doc.get(FIELD_PREV), doc.get(FIELD_FOL), Integer.valueOf(doc.get(FIELD_NUM))));
 			}
 			ireader.close();
 			return result;

@@ -1,42 +1,46 @@
---CREATE DATABASE test;
--- Table: tuple_row
+-- Table: tuple
 
--- DROP TABLE tuple_row;
+-- DROP TABLE tuple;
 
-CREATE TABLE tuple_row
+CREATE TABLE tuple
 (
-  "left" character varying(100) NOT NULL,
-  "right" character varying(100) NOT NULL,
-  occurrences integer,
+  prev character varying(100) NOT NULL,
+  fol character varying(100) NOT NULL,
+  num integer,
   id serial NOT NULL,
-  CONSTRAINT tuple_row_pkey PRIMARY KEY (id)
-) WITH (  OIDS=FALSE );
-ALTER TABLE tuple_row
+  CONSTRAINT tuple_pkey PRIMARY KEY (id),
+  CONSTRAINT tuple_prev_fol_key UNIQUE (prev, fol)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE tuple
   OWNER TO postgres;
 
--- Index: left_index
--- DROP INDEX left_index;
+-- Index: fol_index
 
-CREATE INDEX left_index
-  ON tuple_row
+-- DROP INDEX fol_index;
+
+CREATE INDEX fol_index
+  ON tuple
   USING btree
-  ("left" COLLATE pg_catalog."default");
+  (fol COLLATE pg_catalog."default");
 
--- Index: occurences_index
+-- Index: num_index
 
--- DROP INDEX occurences_index;
+-- DROP INDEX num_index;
 
-CREATE INDEX occurences_index
-  ON tuple_row
+CREATE INDEX num_index
+  ON tuple
   USING btree
-  (occurrences);
+  (num);
 
--- Index: right_index
+-- Index: prev_index
 
--- DROP INDEX right_index;
+-- DROP INDEX prev_index;
 
-CREATE INDEX right_index
-  ON tuple_row
+CREATE INDEX prev_index
+  ON tuple
   USING btree
-  ("right" COLLATE pg_catalog."default");
+  (prev COLLATE pg_catalog."default");
 

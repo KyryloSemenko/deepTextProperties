@@ -1,18 +1,18 @@
 -- hsqldb
 
--- DROP TABLE tuple_row;
+-- DROP TABLE tuple;
 
-CREATE TABLE TUPLE_ROW
+CREATE TABLE TUPLE
 (
   id INTEGER IDENTITY PRIMARY KEY,
-  "left" character varying(100) NOT NULL,
-  "right" character varying(100) NOT NULL,
-  occurrences integer
+  prev character varying(100) NOT NULL,
+  fol character varying(100) NOT NULL,
+  num integer
 );
 
--- Index: left_index
--- DROP INDEX left_index;
-CREATE INDEX PUBLIC.LEFT_INDEX ON PUBLIC.TUPLE_ROW ("left");
-CREATE INDEX PUBLIC.RIGHT_INDEX ON PUBLIC.TUPLE_ROW ("right");
-CREATE INDEX PUBLIC.OCCURENCES_INDEX ON PUBLIC.TUPLE_ROW (occurrences);
+-- Index: prev_index
+-- DROP INDEX prev_index;
+CREATE INDEX PUBLIC.PREV_INDEX ON PUBLIC.TUPLE (prev);
+CREATE INDEX PUBLIC.FOL_INDEX ON PUBLIC.TUPLE (fol);
+CREATE INDEX PUBLIC.NUM_INDEX ON PUBLIC.TUPLE (num);
 

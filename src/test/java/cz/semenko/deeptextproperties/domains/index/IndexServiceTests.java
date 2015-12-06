@@ -54,7 +54,7 @@ public class IndexServiceTests {
 			indexService.appendOrIncrease(tuples);
 			List<Tuple> result = indexService.findAllTuples();
 			assertEquals("Number of documents", 1, result.size());
-			assertEquals("Increased value", (Integer) 3, result.get(0).getOccurrences());
+			assertEquals("Increased value", (Integer) 3, result.get(0).getNum());
 			
 			tuples = new ArrayList<>();
 			tuples.add(new Tuple("a", "b", 1));
@@ -79,7 +79,7 @@ public class IndexServiceTests {
 	
 	/** Calculates speed of {@link IndexService#append(List)} method */
 	@Test
-//	@Ignore
+	@Ignore("Performance test")
 	public void appendSpeedTest() {
 		try {
 			IndexService indexService = initIndexService();

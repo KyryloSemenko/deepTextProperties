@@ -8,34 +8,57 @@ import org.apache.commons.lang.builder.CompareToBuilder;
  *
  */
 public class Tuple implements Comparable<Tuple> {
-	/** First token in pair */
-	private String left;
 	
-	/** Second token in pair */
-	private String right;
+	/** ID of database row in table */
+	private Long id;
 	
-	/** Number of occurrences */
-	private Integer occurrences;
+	/** First token in pair (left), for example <b>a</b>:bcd */
+	private String prev;
+	
+	/** Second token in pair (right), for example a:<b>bcd</b> */
+	private String fol;
+	
+	/** Number of num the same {@link Tuple#prev} and {@link Tuple#fol} in some place */
+	private Integer num;
 	
 	/** Empty constructor */
 	public Tuple() {}
 	
 	/** Constructor */
-	public Tuple(String src, String tgt) {
-		setLeft(src);
-		setRight(tgt);
+	public Tuple(String previouse, String following) {
+		setPrev(previouse);
+		setFol(following);
 	}
 	
-	/** Constructor */
-	public Tuple(String src, String tgt, Integer occurrences) {
-		setLeft(src);
-		setRight(tgt);
-		setOccurrences(occurrences);
+	/**
+	 * Constructor 
+	 * @param previouse {@link Tuple#prev}
+	 * @param following {@link Tuple#fol}
+	 * @param num {@link Tuple#num}
+	 */
+	public Tuple(String previouse, String following, Integer num) {
+		setPrev(previouse);
+		setFol(following);
+		setNum(num);
+	}
+	
+	/**
+	 * Constructor 
+	 * @param id {@link Tuple#id}
+	 * @param previouse {@link Tuple#prev}
+	 * @param following {@link Tuple#fol}
+	 * @param num {@link Tuple#num}
+	 */
+	public Tuple(Long id, String previouse, String following, Integer num) {
+		setId(id);
+		setPrev(previouse);
+		setFol(following);
+		setNum(num);
 	}
 	
 	@Override
 	public String toString() {
-		return "'" + left + ":" + right + ":" + occurrences + "'";
+		return "'" + prev + ":" + fol + ":" + num + "'";
 	}
 
 	@Override
@@ -44,53 +67,67 @@ public class Tuple implements Comparable<Tuple> {
 			return 1;
 		}
 		return new CompareToBuilder()
-			.append(this.getLeft(), o.getLeft())
-			.append(this.getRight(), o.getRight())
+			.append(this.getPrev(), o.getPrev())
+			.append(this.getFol(), o.getFol())
 			.toComparison();
 	}
 	
 // getters and setters //
 	
 	/**
-	 * See {@link Tuple#left}
+	 * See {@link Tuple#id}
 	 */
-	public String getLeft() {
-		return left;
+	public Long getId() {
+		return id;
 	}
 
 	/**
-	 * See {@link Tuple#left}
+	 * See {@link Tuple#id}
 	 */
-	public void setLeft(String value) {
-		this.left = value;
+	public void setId(Long id) {
+		this.id = id;
 	}
 
 	/**
-	 * See {@link Tuple#right}
+	 * See {@link Tuple#prev}
 	 */
-	public String getRight() {
-		return right;
+	public String getPrev() {
+		return prev;
 	}
 
 	/**
-	 * See {@link Tuple#right}
+	 * See {@link Tuple#prev}
 	 */
-	public void setRight(String value) {
-		this.right = value;
+	public void setPrev(String value) {
+		this.prev = value;
 	}
 
 	/**
-	 * See {@link Tuple#occurrences}
+	 * See {@link Tuple#fol}
 	 */
-	public Integer getOccurrences() {
-		return occurrences;
+	public String getFol() {
+		return fol;
 	}
 
 	/**
-	 * See {@link Tuple#occurrences}
+	 * See {@link Tuple#fol}
 	 */
-	public void setOccurrences(Integer occurrences) {
-		this.occurrences = occurrences;
+	public void setFol(String value) {
+		this.fol = value;
+	}
+
+	/**
+	 * See {@link Tuple#num}
+	 */
+	public Integer getNum() {
+		return num;
+	}
+
+	/**
+	 * See {@link Tuple#num}
+	 */
+	public void setNum(Integer num) {
+		this.num = num;
 	}
 
 }
